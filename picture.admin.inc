@@ -105,10 +105,37 @@ function picture_mapping_form(&$form, &$form_state) {
         '#type' => 'radios',
         '#options' => array(
           '_none' => t('Do not use this breakpoint'),
+          'speed' => t('Use image style if connect speed is between:'),
           'image_style' => t('Use image styles'),
           'sizes' => t('Use the sizes attribute'),
         ),
         '#default_value' => isset($mapping_definition['mapping_type']) ? $mapping_definition['mapping_type'] : '_none',
+      );
+      $form['mapping'][$breakpoint_id][$multiplier]['speed_start'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Connect speed start'),
+        '#size' => 4,
+        '#default_value' => isset($mapping_definition['speed_start']) ? $mapping_definition['speed_start'] : '',
+        '#description' => t('Enter connect speed lower range.'),
+        '#field_suffix' => 'Mbps',
+        '#states' => array(
+          'visible' => array(
+            ':input[name="mapping[' . $breakpoint_id . '][' . $multiplier . '][mapping_type]"]' => array('value' => 'speed'),
+          ),
+        ),
+      );
+      $form['mapping'][$breakpoint_id][$multiplier]['speed_end'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Connect speed end'),
+        '#size' => 4,
+        '#default_value' => isset($mapping_definition['speed_end']) ? $mapping_definition['speed_end'] : '',
+        '#description' => t('Enter connect speed upper range.'),
+        '#field_suffix' => 'Mbps',
+        '#states' => array(
+          'visible' => array(
+            ':input[name="mapping[' . $breakpoint_id . '][' . $multiplier . '][mapping_type]"]' => array('value' => 'speed'),
+          ),
+        ),
       );
       $form['mapping'][$breakpoint_id][$multiplier]['image_style'] = array(
         '#type' => 'select',
@@ -119,7 +146,11 @@ function picture_mapping_form(&$form, &$form_state) {
         '#description' => t('Select an image style for this breakpoint.'),
         '#states' => array(
           'visible' => array(
-            ':input[name="mapping[' . $breakpoint_id . '][' . $multiplier . '][mapping_type]"]' => array('value' => 'image_style'),
+            array(
+              array(':input[name="mapping[' . $breakpoint_id . '][' . $multiplier . '][mapping_type]"]' => array('value' => 'image_style')),
+              'or',
+              array(':input[name="mapping[' . $breakpoint_id . '][' . $multiplier . '][mapping_type]"]' => array('value' => 'speed')),
+            ),
           ),
         ),
       );
@@ -317,6 +348,20 @@ function picture_admin_settings() {
     '#default_value' => variable_get('picture_img_sizes_output_method', 'picture_element'),
   );
 
+  $form['picture_network_speed_test_image'] = array(
+    '#title' => t('Image for Network Speed Test'),
+    '#type' => 'managed_file',
+    '#required' =>  TRUE,
+    '#description' => t('Upload an image to be used to calcualate network speed on user systems.'),
+    '#default_value' => variable_get('picture_network_speed_test_image', ''),
+    '#upload_location' => 'public://picture/',
+    '#upload_validators' => array(
+      'file_validate_extensions' => array('gif png jpg jpeg'),
+      // Pass the maximum file size in bytes
+      'file_validate_size' => array(2*1024*1024),
+    ),
+  );
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => 'Save',
@@ -374,6 +419,28 @@ function picture_admin_settings_submit($form, &$form_state) {
   variable_set('picture_polyfill_version', $form_state['values']['picture_polyfill_version']);
   variable_set('picture_fallback_method', $form_state['values']['picture_fallback_method']);
   variable_set('picture_img_sizes_output_method', $form_state['values']['picture_img_sizes_output_method']);
+
+  $old_file_id = variable_get('picture_network_speed_test_image');
+  $new_file_id = $form_state['values']['picture_network_speed_test_image'];
+  if ($old_file_id != $new_file_id) {
+    if (!empty($old_file_id)) {
+      // User uploaded new file. Delte old file.
+      $old_file = file_load($old_file_id);
+      file_usage_delete($old_file, 'picture', 'picture', 0);
+      file_delete($old_file);
+    }
+
+    variable_set('picture_network_speed_test_image', $form_state['values']['picture_network_speed_test_image']);
+    // Load the file via file.fid.
+    $file = file_load($form_state['values']['picture_network_speed_test_image']);
+    // Change status to permanent.
+    $file->status = FILE_STATUS_PERMANENT;
+    // Save.
+    file_save($file);
+    // Record that the module (in this example, user module) is using the file.
+    file_usage_add($file, 'picture', 'picture', 0);
+  }
+
   drupal_set_message(t('Your settings have been saved'));
 }
 

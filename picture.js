@@ -1,6 +1,40 @@
-if (typeof Drupal !== 'undefined' && typeof jQuery !== 'undefined') {
+//if (typeof Drupal !== 'undefined' && typeof jQuery !== 'undefined') {
   // Only load if Drupal and jQuery are defined.
   (function ($) {
+    /**
+     * Get network speed in Mbps.
+     */
+    function picture_get_network_speed(callback) {
+      if ($.cookie('picture_network_speed') == null) {
+        var image_url = Drupal.settings.picture.network_speed_test_image; // URL
+        var image_size = Drupal.settings.picture.network_speed_test_image_size; // bytes.
+
+        var startTime, endTime;
+        var download = new Image();
+        download.onload = function () {
+          endTime = (new Date()).getTime();
+          var duration = (endTime - startTime) / 1000;
+          var bitsLoaded = image_size * 8;
+          var speedBps = (bitsLoaded / duration).toFixed(2);
+          var speedMbps = (speedBps / (1024 * 1024)).toFixed(2);
+          $.cookie('picture_network_speed', speedMbps, {
+            expires: 1,
+            path: Drupal.settings.basePath
+          });
+          callback(speedMbps);
+        }
+
+        download.onerror = function (err, msg) {
+          console.log("Invalid image, or error downloading");
+          callback(null);
+        }
+
+        startTime = (new Date()).getTime();
+        var cacheBuster = "?nnn=" + startTime;
+        download.src = image_url + cacheBuster;
+      }
+      callback($.cookie('picture_network_speed'));
+    }
     Drupal.behaviors.picture = {
       attach: function (context) {
         // Don't load if there's native picture element support.
@@ -36,7 +70,28 @@ if (typeof Drupal !== 'undefined' && typeof jQuery !== 'undefined') {
             });
           });
         }
+        picture_get_network_speed(function(network_speed){
+          console.log(network_speed);
+          $('picture source').each(function(){
+            $source = $(this);
+            var attr = $source.attr('data-' + window.devicePixelRatio + 'x');
+
+            // For some browsers, `attr` is undefined; for others, `attr` is false. Check for both.
+            if (typeof attr !== typeof undefined && attr !== false) {
+              // Data attribute will be holding image src, network speed lower limit and upper limit.
+              // All three values seperated with commas (,).
+              var parts = attr.split(',');
+              var src = parts[0],
+              speed_start = parseFloat(parts[1]),
+              speed_end = parseFloat(parts[2]);
+              if (speed_start <= network_speed && network_speed <= speed_end) {
+                $source.attr('srcset', $source.attr('srcset') + ', ' + src + ' ' +  window.devicePixelRatio + 'x');
+                $source.removeAttr('data-' + window.devicePixelRatio + 'x');
+              }
+            }
+          });
+        })
       }
     };
   })(jQuery);
-}
+// }

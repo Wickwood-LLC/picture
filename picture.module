@@ -164,12 +164,8 @@ function picture_library() {
         'version' => VERSION,
         'js' => array(
           drupal_get_path('module', 'picture') . '/picture.min.js' => array(
-            'type' => 'file',
-            'weight' => -10,
-            'group' => JS_DEFAULT,
             'scope' => variable_get('picture_js_scope', 'footer'),
-            'need_jquery' => FALSE,
-            'async' => TRUE,
+            'requires_jquery' => TRUE,
           ),
         ),
       );
@@ -246,12 +242,8 @@ function picture_library() {
         'version' => VERSION,
         'js' => array(
           drupal_get_path('module', 'picture') . '/picture.js' => array(
-            'type' => 'file',
-            'weight' => -10,
-            'group' => JS_DEFAULT,
             'scope' => variable_get('picture_js_scope', 'footer'),
-            'need_jquery' => FALSE,
-            'async' => TRUE,
+            'requires_jquery' => TRUE,
           ),
         ),
       );
@@ -360,6 +352,7 @@ function picture_theme() {
         'sizes' => NULL,
         'lazyload' => NULL,
         'lazyload_aspect_ratio' => NULL,
+        'attributes' => NULL,
       ),
     ),
     'image_srcset' => array(
@@ -1371,6 +1364,7 @@ function theme_picture(array $variables) {
     if ($breakpoint) {
       $sizes = array();
       $srcset = array();
+      $data_attributes = array();
 
       foreach ($multipliers as $multiplier => $mapping_definition) {
         switch ($mapping_definition['mapping_type']) {
@@ -1393,6 +1387,10 @@ function theme_picture(array $variables) {
             // $image_style->transformMimeType($derivative_mime_type);
             // $derivative_mime_types[] = $derivative_mime_type;
             $srcset[$multiplier] = _picture_image_style_url($mapping_definition['image_style'], $variables['uri'], $variables['timestamp']) . ' ' . $multiplier;
+            break;
+
+          case 'speed':
+            $data_attributes['data-' . $multiplier] = _picture_image_style_url($mapping_definition['image_style'], $variables['uri'], $variables['timestamp']) . ',' . $mapping_definition['speed_start'] . ',' . $mapping_definition['speed_end'];
             break;
         }
       }
@@ -1418,6 +1416,7 @@ function theme_picture(array $variables) {
         '#sizes' => implode(', ', array_unique($sizes)),
         '#lazyload' => !empty($variables['lazyload']),
         '#lazyload_aspect_ratio' => $aspect_ratio,
+        '#attributes' => $data_attributes,
       );
     }
   }
@@ -1607,7 +1606,9 @@ function theme_image_srcset(array $variables) {
  * @ingroup themeable
  */
 function theme_picture_source(array $variables) {
-
+  if (!empty($variables['attributes'])) {
+    $attributes = $variables['attributes'];
+  }
   if (!empty($variables['lazyload'])) {
     $attributes['data-srcset'] = $variables['srcset'];
     if (!empty($variables['lazyload_aspect_ratio'])) {
@@ -1830,14 +1831,19 @@ function picture_page_build(&$page) {
     }
   }
 
+  $js_setting = array();
+
   if (!empty($mappings)) {
     $mappings[] = array('Not Set', 'not_set');
-    drupal_add_js(array(
-      'picture' => array(
-        'mappings' => $mappings,
-        'label' => variable_get('picture_ckeditor_label', 'Image size (required)'),
-      )), 'setting');
+    $js_setting['mappings'] = $mappings;
+    $js_setting['label'] = variable_get('picture_ckeditor_label', 'Image size (required)');
   }
+  $test_image = file_load(variable_get('picture_network_speed_test_image'));
+  $js_setting['network_speed_test_image'] = file_create_url($test_image->uri);;
+  $js_setting['network_speed_test_image_size'] = $test_image->filesize;
+  drupal_add_js(array(
+    'picture' => $js_setting
+  ), 'setting');
 }
 
 /**
@@ -2051,7 +2057,7 @@ function picture_get_mapping_breakpoints(PictureMapping $picture_mapping, &$fall
         foreach ($multipliers as $multiplier => $mapping_definition) {
           // Make sure the multiplier still exists.
           if (!PictureMapping::isEmptyMappingDefinition($mapping_definition)) {
-            if ($mapping_definition['mapping_type'] == 'image_style') {
+            if ($mapping_definition['mapping_type'] == 'image_style' || $mapping_definition['mapping_type'] == 'speed') {
               $image_styles[] = $mapping_definition['image_style'];
             }
             elseif ($mapping_definition['mapping_type'] == 'sizes') {

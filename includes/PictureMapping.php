@@ -241,6 +241,12 @@ class PictureMapping {
             return FALSE;
           }
           break;
+
+        case 'speed':
+          if ($mapping_definition['image_style']) {
+            return FALSE;
+          }
+          break;
       }
     }
     return TRUE;
