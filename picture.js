@@ -74,7 +74,7 @@
           console.log(network_speed);
           $('picture source').each(function(){
             $source = $(this);
-            var attr = $source.attr('data-' + window.devicePixelRatio + 'x');
+            var attr = $source.attr('data-picture-' + window.devicePixelRatio + 'x');
 
             // For some browsers, `attr` is undefined; for others, `attr` is false. Check for both.
             if (typeof attr !== typeof undefined && attr !== false) {
@@ -86,7 +86,7 @@
               speed_end = parseFloat(parts[2]);
               if (speed_start <= network_speed && network_speed <= speed_end) {
                 $source.attr('srcset', $source.attr('srcset') + ', ' + src + ' ' +  window.devicePixelRatio + 'x');
-                $source.removeAttr('data-' + window.devicePixelRatio + 'x');
+                $source.removeAttr('data-picture-' + window.devicePixelRatio + 'x');
               }
             }
           });
