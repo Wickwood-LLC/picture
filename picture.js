@@ -71,7 +71,7 @@
           });
         }
         picture_get_network_speed(function(network_speed){
-          console.log(network_speed);
+          console.log("Calculated network speed: " + network_speed);
           $('picture source').each(function(){
             $source = $(this);
             var attr = $source.attr('data-picture-' + window.devicePixelRatio + 'x');
