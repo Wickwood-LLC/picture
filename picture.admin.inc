@@ -105,7 +105,7 @@ function picture_mapping_form(&$form, &$form_state) {
         '#type' => 'radios',
         '#options' => array(
           '_none' => t('Do not use this breakpoint'),
-          'speed' => t('Use image style if connect speed is between:'),
+          'speed' => t('Use image style by network speed'),
           'image_style' => t('Use image styles'),
           'sizes' => t('Use the sizes attribute'),
         ),
