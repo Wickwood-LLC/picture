@@ -207,6 +207,21 @@ function picture_mapping_form_validate($form, &$form_state) {
   if (!$picture_mapping->hasMappings()) {
     form_error($form['mapping'], t('Please select at least one mapping.'));
   }
+  foreach ($form_state['values']['mapping'] as $breakpoint => $mapping) {
+    foreach ($mapping as $multiplier => $data) {
+      if ($data['mapping_type'] == 'speed') {
+        // User has to enter valid speed start and end values if 'speed' option was chosen.
+        if (!preg_match('/^\d+(\.\d*)?$/', $data['speed_start'])) {
+          $error_elements = array('mapping' , $breakpoint, $multiplier, 'speed_start');
+          form_set_error(implode('][', $error_elements), t('Please enter a valid number'));
+        }
+        if (empty($data['speed_end']) || !preg_match('/^\d+(\.\d*)?$/', $data['speed_end'])) {
+          $error_elements = array('mapping' , $breakpoint, $multiplier, 'speed_end');
+          form_set_error(implode('][', $error_elements), t('Please enter a valid number'));
+        }
+      }
+    }
+  }
 }
 
 /**
