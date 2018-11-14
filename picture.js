@@ -70,26 +70,36 @@
             });
           });
         }
+
+        var pixel_ratios = [];
+        // We prepare pixel ratio list from high to low.
+        // So, image will be started dowloading for higher resolution instead of
+        // unecessarily downloading for low resolution.
+        for (var i = window.devicePixelRatio; i >= 1; i--) {
+          pixel_ratios.push(i);
+        }
         picture_get_network_speed(function(network_speed){
           console.log("Calculated network speed: " + network_speed);
           $('picture source').each(function(){
             $source = $(this);
-            var attr = $source.attr('data-picture-' + window.devicePixelRatio + 'x');
-            // On Firefox 'srcset' attribute becomes undefined sometimes. So checking it as well.
-            var src_attr = $source.attr('srcset');
-            // For some browsers, `attr` is undefined; for others, `attr` is false. Check for both.
-            if (typeof attr !== typeof undefined && attr !== false && typeof src_attr !== typeof undefined && src_attr !== false) {
-              // Data attribute will be holding image src, network speed lower limit and upper limit.
-              // All three values seperated with commas (,).
-              var parts = attr.split(',');
-              var src = parts[0];
-              speed_start = parseFloat(parts[1]),
-              speed_end = parseFloat(parts[2]);
-              if (speed_start <= network_speed && network_speed <= speed_end) {
-                $source.attr('srcset', $source.attr('srcset') + ', ' + src + ' ' +  window.devicePixelRatio + 'x');
-                $source.removeAttr('data-picture-' + window.devicePixelRatio + 'x');
+            $.each(pixel_ratios, function (index, pixel_ratio){
+              var attr = $source.attr('data-picture-' + pixel_ratio + 'x');
+              // On Firefox 'srcset' attribute becomes undefined sometimes. So checking it as well.
+              var src_attr = $source.attr('srcset');
+              // For some browsers, `attr` is undefined; for others, `attr` is false. Check for both.
+              if (typeof attr !== typeof undefined && attr !== false && typeof src_attr !== typeof undefined && src_attr !== false) {
+                // Data attribute will be holding image src, network speed lower limit and upper limit.
+                // All three values seperated with commas (,).
+                var parts = attr.split(',');
+                var src = parts[0];
+                speed_start = parseFloat(parts[1]),
+                speed_end = parseFloat(parts[2]);
+                if (speed_start <= network_speed && network_speed <= speed_end) {
+                  $source.attr('srcset', $source.attr('srcset') + ', ' + src + ' ' +  pixel_ratio + 'x');
+                  $source.removeAttr('data-picture-' + pixel_ratio + 'x');
+                }
               }
-            }
+            });
           });
         });
       }
