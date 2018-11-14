@@ -5,7 +5,7 @@
      * Get network speed in Mbps.
      */
     function picture_get_network_speed(callback) {
-      if ($.cookie('picture_network_speed') == null) {
+      if ($.cookie('picture_network_speed_mbps') == null) {
         var image_url = Drupal.settings.picture.network_speed_test_image; // URL
         var image_size = Drupal.settings.picture.network_speed_test_image_size; // bytes.
 
@@ -17,7 +17,7 @@
           var bitsLoaded = image_size * 8;
           var speedBps = (bitsLoaded / duration).toFixed(2);
           var speedMbps = (speedBps / (1024 * 1024)).toFixed(2);
-          $.cookie('picture_network_speed', speedMbps, {
+          $.cookie('picture_network_speed_mbps', speedMbps, {
             expires: 1,
             path: Drupal.settings.basePath
           });
@@ -33,7 +33,7 @@
         var cacheBuster = "?nnn=" + startTime;
         download.src = image_url + cacheBuster;
       }
-      callback($.cookie('picture_network_speed'));
+      callback($.cookie('picture_network_speed_mbps'));
     }
     Drupal.behaviors.picture = {
       attach: function (context) {
