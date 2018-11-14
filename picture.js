@@ -75,13 +75,14 @@
           $('picture source').each(function(){
             $source = $(this);
             var attr = $source.attr('data-picture-' + window.devicePixelRatio + 'x');
-
+            // On Firefox 'srcset' attribute becomes undefined sometimes. So checking it as well.
+            var src_attr = $source.attr('srcset');
             // For some browsers, `attr` is undefined; for others, `attr` is false. Check for both.
-            if (typeof attr !== typeof undefined && attr !== false) {
+            if (typeof attr !== typeof undefined && attr !== false && typeof src_attr !== typeof undefined && src_attr !== false) {
               // Data attribute will be holding image src, network speed lower limit and upper limit.
               // All three values seperated with commas (,).
               var parts = attr.split(',');
-              var src = parts[0],
+              var src = parts[0];
               speed_start = parseFloat(parts[1]),
               speed_end = parseFloat(parts[2]);
               if (speed_start <= network_speed && network_speed <= speed_end) {
@@ -90,7 +91,7 @@
               }
             }
           });
-        })
+        });
       }
     };
   })(jQuery);
