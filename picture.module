@@ -1358,6 +1358,8 @@ function theme_picture(array $variables) {
     );
   }
 
+  $pixel_ratios = array();
+
   // All breakpoints and multipliers.
   foreach ($variables['breakpoints'] as $breakpoint_name => $multipliers) {
     $breakpoint = breakpoints_breakpoint_load_by_fullkey($breakpoint_name);
@@ -1367,6 +1369,7 @@ function theme_picture(array $variables) {
       $data_attributes = array();
 
       foreach ($multipliers as $multiplier => $mapping_definition) {
+        $pixel_ratios[] = trim($multiplier, 'x');
         switch ($mapping_definition['mapping_type']) {
           case 'sizes':
             foreach (array_filter($mapping_definition['sizes_image_styles']) as $image_style_name) {
@@ -1420,7 +1423,12 @@ function theme_picture(array $variables) {
       );
     }
   }
-  $attributes = array();
+  $pixel_ratios = array_unique($pixel_ratios);
+  arsort($pixel_ratios);  // Sort in descending order.
+  $attributes = array(
+    // This attribute will be used by JS to load higher resolution images dynamically as needed.
+    'data-pixel-ratios' => implode ( ',', $pixel_ratios),
+  );
   foreach (array('alt', 'title', 'attributes') as $key) {
     $field = sprintf('field_file_image_%s_text', $key);
     if (isset($variables[$key]) && !empty($variables[$key])) {

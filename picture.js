@@ -3,6 +3,13 @@
   (function ($) {
     /**
      * Get network speed in Mbps.
+     * It will take value from cookie if already calcualated and saved.
+     * Otherwise it will calculate network speed by downloading an image of known size,
+     * also stores that value in cookie for certain duration of time.
+     *
+     * @param callback
+     *  The callback will receive network speed in Mbps if calculation is/was success.
+     *  Other wise callback will receive null.
      */
     function picture_get_network_speed(callback) {
       if ($.cookie('picture_network_speed_mbps') == null) {
@@ -18,8 +25,8 @@
           var speedBps = (bitsLoaded / duration).toFixed(2);
           var speedMbps = (speedBps / (1024 * 1024)).toFixed(2);
           $.cookie('picture_network_speed_mbps', speedMbps, {
-            expires: 1,
-            path: Drupal.settings.basePath
+            expires: 1, // Expires in one day.
+            path: Drupal.settings.basePath  // Net to set base path or it will do it for each page.
           });
           callback(speedMbps);
         }
@@ -71,35 +78,48 @@
           });
         }
 
-        var pixel_ratios = [];
-        // We prepare pixel ratio list from high to low.
-        // So, image will be started dowloading for higher resolution instead of
-        // unecessarily downloading for low resolution.
-        for (var i = window.devicePixelRatio; i >= 1; i--) {
-          pixel_ratios.push(i);
-        }
         picture_get_network_speed(function(network_speed){
+          // TODO: Remove this line after testing.
           console.log("Calculated network speed: " + network_speed);
-          $('picture source').each(function(){
-            $source = $(this);
-            $.each(pixel_ratios, function (index, pixel_ratio){
-              var attr = $source.attr('data-picture-' + pixel_ratio + 'x');
-              // On Firefox 'srcset' attribute becomes undefined sometimes. So checking it as well.
-              var src_attr = $source.attr('srcset');
-              // For some browsers, `attr` is undefined; for others, `attr` is false. Check for both.
-              if (typeof attr !== typeof undefined && attr !== false && typeof src_attr !== typeof undefined && src_attr !== false) {
-                // Data attribute will be holding image src, network speed lower limit and upper limit.
-                // All three values seperated with commas (,).
-                var parts = attr.split(',');
-                var src = parts[0];
-                speed_start = parseFloat(parts[1]),
-                speed_end = parseFloat(parts[2]);
-                if (speed_start <= network_speed && network_speed <= speed_end) {
-                  $source.attr('srcset', $source.attr('srcset') + ', ' + src + ' ' +  pixel_ratio + 'x');
-                  $source.removeAttr('data-picture-' + pixel_ratio + 'x');
-                }
-              }
-            });
+
+          $('picture').each(function () {
+            var attr_pr = $(this).attr('data-pixel-ratios');
+
+            // For some browsers, `attr` is undefined; for others, `attr` is false. Check for both.
+            if (typeof attr_pr !== typeof undefined && attr_pr !== false) {
+              var pixel_ratios = attr_pr.split(',');
+              $('source', this).each(function(){
+                $source = $(this);
+
+                // Pixel ratio list is already sorted in descending order at server.
+                // So, it will try to use highest resultion images first to reduce bandwidth wastage.
+                $.each(pixel_ratios, function (index, pixel_ratio){
+                  var attr = $source.attr('data-picture-' + pixel_ratio + 'x');
+                  if (typeof attr !== typeof undefined && attr !== false) {
+                    // Data attribute will be holding image src, network speed lower limit and upper limit.
+                    // All three values seperated with commas (,).
+                    var parts = attr.split(',');
+                    var src = parts[0]; // Image URL
+                    speed_start = parseFloat(parts[1]); // Network speed lower limit.
+                    speed_end = parseFloat(parts[2]);   // Network speed upper limit.
+                    if (speed_start <= network_speed && network_speed <= speed_end) {
+                      // Prepare an empyt string as srcset attribute if the attribute is undefined,
+                      // otherwise it makes problems in Firefox.
+                      var src_attr = $source.attr('srcset');
+                      if (typeof src_attr === typeof undefined || src_attr === false) {
+                        src_attr = '';
+                      }
+                      $source.attr('srcset', src_attr + ', ' + src + ' ' +  pixel_ratio + 'x');
+                      // Remove attribute which is no longer needed.
+                      // It also prevents accidental processinng of the attribute.
+                      $source.removeAttr('data-picture-' + pixel_ratio + 'x');
+                    }
+                  }
+                });
+
+              });
+            }
+
           });
         });
       }
