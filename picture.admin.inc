@@ -92,6 +92,12 @@ function picture_mapping_form(&$form, &$form_state) {
     PICTURE_EMPTY_IMAGE => t('Empty image'),
     PICTURE_ORIGINAL_IMAGE => t('Original image'),
   );
+
+  $minimum_speed_options = array();
+  foreach (preg_split ('/$\R?^/m', variable_get('picture_network_speeds', '')) as $network_type) {
+    list ($speed, $label) = explode('|', $network_type, 2);
+    $minimum_speed_options[$speed] = $label;
+  }
   foreach ($picture_mapping->getMappings() as $breakpoint_id => $mapping) {
     foreach ($mapping as $multiplier => $mapping_definition) {
       $breakpoint = breakpoints_breakpoint_load_by_fullkey($breakpoint_id);
@@ -105,18 +111,18 @@ function picture_mapping_form(&$form, &$form_state) {
         '#type' => 'radios',
         '#options' => array(
           '_none' => t('Do not use this breakpoint'),
-          'speed' => t('Use image style by network speed'),
+          'speed' => t('Use image style to load dynamically by network speed'),
           'image_style' => t('Use image styles'),
           'sizes' => t('Use the sizes attribute'),
         ),
         '#default_value' => isset($mapping_definition['mapping_type']) ? $mapping_definition['mapping_type'] : '_none',
       );
       $form['mapping'][$breakpoint_id][$multiplier]['minimum_speed'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Minimum connection speed'),
-        '#size' => 4,
+        '#type' => 'select',
+        '#title' => t('Minimum connection speed type'),
+        '#options' => $minimum_speed_options,
         '#default_value' => isset($mapping_definition['minimum_speed']) ? $mapping_definition['minimum_speed'] : '',
-        '#description' => t('Enter minimum connection speed required to use this image style.'),
+        '#description' => t('Enter minimum connection speed required to use this image style. The image will be loaded only if connection speed match this condition.'),
         '#field_suffix' => 'Mbps',
         '#states' => array(
           'visible' => array(
@@ -361,6 +367,14 @@ function picture_admin_settings() {
     ),
   );
 
+  $form['picture_network_speeds'] = array(
+    '#title' => t('Network speeds'),
+    '#type' => 'textarea',
+    '#required' =>  TRUE,
+    '#description' => t('Specify minimum network speeds with labels. Enter one pair of network speed and label in each line. Network speed and label has to be sperated with |. For example, "1|One Mpbs connection". Network speed value are assumed in Mbps.'),
+    '#default_value' => variable_get('picture_network_speeds', ''),
+  );
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => 'Save',
@@ -384,6 +398,12 @@ function picture_admin_settings_validate($form, &$form_state) {
           form_set_error($machine_name . '][fallback', t('Please choose a fallback image style for this picture mapping'));
         }
       }
+    }
+  }
+  $network_types = preg_split ('/$\R?^/m', $form_state['values']['picture_network_speeds']);
+  foreach ($network_types as $index => $network_type) {
+    if (!empty($network_type) && !preg_match('/^\d+(\.\d*)?\|.+$/', $network_type)) {
+      form_set_error('picture_network_speeds', t('Invalid item network speed type item on line @line', array('@line' => $index + 1)));
     }
   }
 }
@@ -439,6 +459,7 @@ function picture_admin_settings_submit($form, &$form_state) {
     // Record that the module (in this example, user module) is using the file.
     file_usage_add($file, 'picture', 'picture', 0);
   }
+  variable_set('picture_network_speeds', $form_state['values']['picture_network_speeds']);
 
   drupal_set_message(t('Your settings have been saved'));
 }
