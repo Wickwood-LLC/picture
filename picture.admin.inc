@@ -111,12 +111,12 @@ function picture_mapping_form(&$form, &$form_state) {
         ),
         '#default_value' => isset($mapping_definition['mapping_type']) ? $mapping_definition['mapping_type'] : '_none',
       );
-      $form['mapping'][$breakpoint_id][$multiplier]['speed_start'] = array(
+      $form['mapping'][$breakpoint_id][$multiplier]['minimum_speed'] = array(
         '#type' => 'textfield',
-        '#title' => t('Connect speed start'),
+        '#title' => t('Minimum connection speed'),
         '#size' => 4,
-        '#default_value' => isset($mapping_definition['speed_start']) ? $mapping_definition['speed_start'] : '',
-        '#description' => t('Enter connect speed lower range.'),
+        '#default_value' => isset($mapping_definition['minimum_speed']) ? $mapping_definition['minimum_speed'] : '',
+        '#description' => t('Enter minimum connection speed required to use this image style.'),
         '#field_suffix' => 'Mbps',
         '#states' => array(
           'visible' => array(
@@ -124,19 +124,7 @@ function picture_mapping_form(&$form, &$form_state) {
           ),
         ),
       );
-      $form['mapping'][$breakpoint_id][$multiplier]['speed_end'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Connect speed end'),
-        '#size' => 4,
-        '#default_value' => isset($mapping_definition['speed_end']) ? $mapping_definition['speed_end'] : '',
-        '#description' => t('Enter connect speed upper range.'),
-        '#field_suffix' => 'Mbps',
-        '#states' => array(
-          'visible' => array(
-            ':input[name="mapping[' . $breakpoint_id . '][' . $multiplier . '][mapping_type]"]' => array('value' => 'speed'),
-          ),
-        ),
-      );
+
       $form['mapping'][$breakpoint_id][$multiplier]['image_style'] = array(
         '#type' => 'select',
         '#title' => t('Image style'),
@@ -211,12 +199,8 @@ function picture_mapping_form_validate($form, &$form_state) {
     foreach ($mapping as $multiplier => $data) {
       if ($data['mapping_type'] == 'speed') {
         // User has to enter valid speed start and end values if 'speed' option was chosen.
-        if (!preg_match('/^\d+(\.\d*)?$/', $data['speed_start'])) {
-          $error_elements = array('mapping' , $breakpoint, $multiplier, 'speed_start');
-          form_set_error(implode('][', $error_elements), t('Please enter a valid number'));
-        }
-        if (empty($data['speed_end']) || !preg_match('/^\d+(\.\d*)?$/', $data['speed_end'])) {
-          $error_elements = array('mapping' , $breakpoint, $multiplier, 'speed_end');
+        if (!preg_match('/^\d+(\.\d*)?$/', $data['minimum_speed'])) {
+          $error_elements = array('mapping' , $breakpoint, $multiplier, 'minimum_speed');
           form_set_error(implode('][', $error_elements), t('Please enter a valid number'));
         }
       }

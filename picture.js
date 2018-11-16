@@ -100,16 +100,18 @@
                     // All three values seperated with commas (,).
                     var parts = attr.split(',');
                     var src = parts[0]; // Image URL
-                    speed_start = parseFloat(parts[1]); // Network speed lower limit.
-                    speed_end = parseFloat(parts[2]);   // Network speed upper limit.
-                    if (speed_start <= network_speed && network_speed <= speed_end) {
+                    var minimum_speed = parseFloat(parts[1]);
+                    if (minimum_speed <= network_speed) {
                       // Prepare an empyt string as srcset attribute if the attribute is undefined,
                       // otherwise it makes problems in Firefox.
                       var src_attr = $source.attr('srcset');
                       if (typeof src_attr === typeof undefined || src_attr === false) {
                         src_attr = '';
                       }
-                      $source.attr('srcset', src_attr + ', ' + src + ' ' +  pixel_ratio + 'x');
+                      else {
+                        src_attr += ', ';
+                      }
+                      $source.attr('srcset', src_attr + src + ' ' +  pixel_ratio + 'x');
                       // Remove attribute which is no longer needed.
                       // It also prevents accidental processinng of the attribute.
                       $source.removeAttr('data-picture-' + pixel_ratio + 'x');

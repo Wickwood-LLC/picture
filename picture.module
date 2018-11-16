@@ -1393,7 +1393,7 @@ function theme_picture(array $variables) {
             break;
 
           case 'speed':
-            $data_attributes['data-picture-' . $multiplier] = _picture_image_style_url($mapping_definition['image_style'], $variables['uri'], $variables['timestamp']) . ',' . $mapping_definition['speed_start'] . ',' . $mapping_definition['speed_end'];
+            $data_attributes['data-picture-' . $multiplier] = _picture_image_style_url($mapping_definition['image_style'], $variables['uri'], $variables['timestamp']) . ',' . $mapping_definition['minimum_speed'];
             break;
         }
       }
