@@ -123,7 +123,6 @@ function picture_mapping_form(&$form, &$form_state) {
         '#options' => $minimum_speed_options,
         '#default_value' => isset($mapping_definition['minimum_speed']) ? $mapping_definition['minimum_speed'] : '',
         '#description' => t('Enter minimum connection speed required to use this image style. The image will be loaded only if connection speed match this condition.'),
-        '#field_suffix' => 'Mbps',
         '#states' => array(
           'visible' => array(
             ':input[name="mapping[' . $breakpoint_id . '][' . $multiplier . '][mapping_type]"]' => array('value' => 'speed'),
