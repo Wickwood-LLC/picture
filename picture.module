@@ -1846,9 +1846,11 @@ function picture_page_build(&$page) {
     $js_setting['mappings'] = $mappings;
     $js_setting['label'] = variable_get('picture_ckeditor_label', 'Image size (required)');
   }
-  $test_image = file_load(variable_get('picture_network_speed_test_image'));
-  $js_setting['network_speed_test_image'] = file_create_url($test_image->uri);;
-  $js_setting['network_speed_test_image_size'] = $test_image->filesize;
+  $picture_network_speed_test_image = variable_get('picture_network_speed_test_image');
+  if ($picture_network_speed_test_image && $test_image = file_load(variable_get('picture_network_speed_test_image'))) {
+    $js_setting['network_speed_test_image'] = file_create_url($test_image->uri);;
+    $js_setting['network_speed_test_image_size'] = $test_image->filesize;
+  }
   drupal_add_js(array(
     'picture' => $js_setting
   ), 'setting');
