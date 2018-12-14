@@ -246,6 +246,9 @@ function picture_library() {
             'requires_jquery' => TRUE,
           ),
         ),
+        'dependencies' => array(
+          array('system', 'jquery.cookie'),
+        ),
       );
 
       $libraries['lazysizes'] = array(
